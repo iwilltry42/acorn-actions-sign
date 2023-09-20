@@ -1,16 +1,25 @@
-name: Acorn Login
-description: Logs in to an Acorn registry
+name: Acorn Image Sign
+description: Signs an Acorn Image
 author: 'Acorn Labs, Inc.'
 inputs:
-  registry:
-    description: 'Registry server address'
+  image:
+    description: 'The image to sign'
     required: true
-  username:
-    description: 'Username'
+  key:
+    description: 'The private key to sign with'
     required: true
-  password:
-    description: Password
-    required: true
+  push:
+    description: 'Push the image to the registry'
+    required: false
+    default: "false"
+  digest:
+    description: 'The digest of the image (so we do not have to infer it from the tag)'
+    required: false
+    default: ""
+  annotations:
+    description: 'Annotations to add to the image (multiline with one key=value pair per line)'
+    required: false
+    default: ""
 runs:
   using: 'node16'
   main: 'dist/index.js'

@@ -1,13 +1,11 @@
-import {expect, jest, test} from '@jest/globals'
-import {login, logout} from '../src/login'
-import * as path from 'path'
 import * as exec from '@actions/exec'
+import {expect, jest, test} from '@jest/globals'
+import * as path from 'path'
+import {sign, useDigest} from '../src/sign'
 
 process.env['RUNNER_TEMP'] = path.join(__dirname, 'runner')
 
-const registry = 'https://ahcr.io'
-
-test('loginStandard calls exec', async () => {
+test('signStandard calls exec', async () => {
   // @ts-ignore
   const execSpy = jest
     .spyOn(exec, 'getExecOutput')
@@ -20,38 +18,37 @@ test('loginStandard calls exec', async () => {
       } as exec.ExecOutput
     })
 
-  const username = 'hello'
-  const password = 'world'
+  const image = 'foo/bar:v1'
+  const key = 'myprivatekey'
+  const push = false
+  const digest = 'sha256:1234567890abcdef'
+  const annotations = new Map<string, string>()
+  annotations.set('foo', 'bar')
+  annotations.set('baz', 'qux')
 
-  await login(registry, username, password)
+  const imageRef = useDigest(image, digest)
+
+  await sign(image, key, push, digest, annotations)
 
   expect(execSpy).toHaveBeenCalledWith(
     `acorn`,
-    ['login', '--password-stdin', '--username', username, registry],
+    [
+      'image',
+      'sign',
+      '--key',
+      key,
+      `--push=${push}`,
+      '--annotation',
+      `acorn.io/signed-name=${image}`,
+      '--annotation',
+      `foo=bar`,
+      '--annotation',
+      `baz=qux`,
+      imageRef
+    ],
     {
-      input: Buffer.from(password),
       silent: true,
       ignoreReturnCode: true
     }
   )
-})
-
-test('logout calls exec', async () => {
-  // @ts-ignore
-  const execSpy = jest
-    .spyOn(exec, 'getExecOutput')
-    .mockImplementation(async () => {
-      // @ts-ignore
-      return {
-        exitCode: expect.any(Number),
-        stdout: expect.any(Function),
-        stderr: expect.any(Function)
-      } as exec.ExecOutput
-    })
-
-  await logout(registry)
-
-  expect(execSpy).toHaveBeenCalledWith(`acorn`, ['logout', registry], {
-    ignoreReturnCode: true
-  })
 })

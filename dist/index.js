@@ -1,81 +1,6 @@
 require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 577:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.logout = exports.login = void 0;
-const core = __importStar(__nccwpck_require__(186));
-const exec = __importStar(__nccwpck_require__(514));
-function login(registry, username, password) {
-    return __awaiter(this, void 0, void 0, function* () {
-        if (!registry || !username || !password) {
-            throw new Error('Registry, username, and password required');
-        }
-        const args = ['login', '--password-stdin', '--username', username, registry];
-        core.info(`Logging into ${registry}...`);
-        const res = yield exec.getExecOutput('acorn', args, {
-            ignoreReturnCode: true,
-            silent: true,
-            input: Buffer.from(password)
-        });
-        if (res.stderr.length > 0 && res.exitCode !== 0) {
-            throw new Error(res.stderr.trim());
-        }
-        core.info(`Login Succeeded!`);
-    });
-}
-exports.login = login;
-function logout(registry) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const res = yield exec.getExecOutput('acorn', ['logout', registry], {
-            ignoreReturnCode: true
-        });
-        if (res.stderr.length > 0 && res.exitCode !== 0) {
-            core.warning(res.stderr.trim());
-        }
-    });
-}
-exports.logout = logout;
-
-
-/***/ }),
-
 /***/ 109:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -115,32 +40,27 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(186));
-const login_1 = __nccwpck_require__(577);
+const sign_1 = __nccwpck_require__(494);
 function setup() {
     return __awaiter(this, void 0, void 0, function* () {
-        const registry = core.getInput('registry');
-        const username = core.getInput('username');
-        const password = core.getInput('password');
-        core.saveState('registry', registry);
-        yield (0, login_1.login)(registry, username, password);
-    });
-}
-function teardown() {
-    return __awaiter(this, void 0, void 0, function* () {
-        const registry = core.getState('registry');
-        yield (0, login_1.logout)(registry);
+        const image = core.getInput('image', { required: true });
+        const digest = core.getInput('digest');
+        const key = core.getInput('key', { required: true });
+        const annotations = core.getMultilineInput('annotations');
+        const push = core.getBooleanInput('push');
+        // convert annotations from json to map
+        const annotationsMap = new Map();
+        for (const annotation of annotations) {
+            const [k, v] = annotation.split('=');
+            annotationsMap.set(k, v);
+        }
+        yield (0, sign_1.sign)(image, key, push, digest, annotationsMap);
     });
 }
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            if (core.getState('isPost')) {
-                yield teardown();
-            }
-            else {
-                core.saveState('isPost', 'true');
-                yield setup();
-            }
+            yield setup();
         }
         catch (error) {
             if (error instanceof Error) {
@@ -150,6 +70,108 @@ function run() {
     });
 }
 run();
+
+
+/***/ }),
+
+/***/ 494:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.useDigest = exports.sign = void 0;
+const core = __importStar(__nccwpck_require__(186));
+const exec = __importStar(__nccwpck_require__(514));
+function sign(image, key, push = true, digest, annotations) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (!image || !key) {
+            throw new Error('Image and Key required');
+        }
+        const args = ['image', 'sign', '--key', key, `--push=${push}`];
+        const imageRef = useDigest(image, digest);
+        core.info(`Signing image ${imageRef}`);
+        // Ensure that we use the original image name here, even though we (potentially) overrode the imageRef above
+        args.push('--annotation', `acorn.io/signed-name=${image}`);
+        for (const [k, v] of annotations !== null && annotations !== void 0 ? annotations : []) {
+            args.push('--annotation', `${k}=${v}`);
+        }
+        args.push(imageRef);
+        const res = yield exec.getExecOutput('acorn', args, {
+            ignoreReturnCode: true,
+            silent: true
+        });
+        if (res.stderr.length > 0 && res.exitCode !== 0) {
+            throw new Error(res.stderr.trim());
+        }
+        core.info(`Successfully signed image ${imageRef} (as name ${image})`);
+    });
+}
+exports.sign = sign;
+function useDigest(image, digest) {
+    var _a;
+    // If the digest is not provided, return the original image
+    if (!digest) {
+        return image;
+    }
+    // Regular expression to match:
+    // - imageName (everything up to the last colon or '@' symbol)
+    // - optional tag (after the last colon and before '@', if present)
+    // - optional digest (after the '@' symbol, if present)
+    const imageRegex = /^(.*?)(?::([^@]+))?(@[^@]+)?$/;
+    const matches = RegExp(imageRegex).exec(image);
+    // If no matches found, return the original image
+    if (!matches) {
+        return image;
+    }
+    const imageName = matches[1];
+    // const imageTag = matches[2]
+    const imageDigest = (_a = matches[3]) === null || _a === void 0 ? void 0 : _a.replace('@', '');
+    // If the image already has a digest, return the original image
+    if (imageDigest) {
+        // ... but error out if there's a digest mismatch
+        if (digest && imageDigest !== digest) {
+            throw new Error(`Defined conflicting digests: ${imageDigest} and ${digest}`);
+        }
+        return image;
+    }
+    // Use provided digest
+    core.info(`Using provided digest ${digest} instead of original reference ${image}`);
+    return `${imageName}@${digest}`;
+}
+exports.useDigest = useDigest;
 
 
 /***/ }),

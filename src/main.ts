@@ -1,28 +1,26 @@
 import * as core from '@actions/core'
-import {login, logout} from './login'
+import {sign} from './sign'
 
 async function setup(): Promise<void> {
-  const registry = core.getInput('registry')
-  const username = core.getInput('username')
-  const password = core.getInput('password')
+  const image = core.getInput('image', {required: true})
+  const digest = core.getInput('digest')
+  const key = core.getInput('key', {required: true})
+  const annotations = core.getMultilineInput('annotations')
+  const push = core.getBooleanInput('push')
 
-  core.saveState('registry', registry)
-  await login(registry, username, password)
-}
+  // convert annotations from json to map
+  const annotationsMap = new Map<string, string>()
+  for (const annotation of annotations) {
+    const [k, v] = annotation.split('=')
+    annotationsMap.set(k, v)
+  }
 
-async function teardown(): Promise<void> {
-  const registry = core.getState('registry')
-  await logout(registry)
+  await sign(image, key, push, digest, annotationsMap)
 }
 
 async function run(): Promise<void> {
   try {
-    if (core.getState('isPost')) {
-      await teardown()
-    } else {
-      core.saveState('isPost', 'true')
-      await setup()
-    }
+    await setup()
   } catch (error) {
     if (error instanceof Error) {
       core.setFailed(error.message)
